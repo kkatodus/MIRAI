@@ -269,7 +269,10 @@ class SparseAttention(nn.Module):
 
     def get_ops(self):
         try:
-            from deepspeed.ops.sparse_attention import MatMul, Softmax
+    
+            # from deepspeed.ops.sparse_attention import MatMul, Softmax
+            from deepspeed.ops.sparse_attention.softmax import Softmax
+            from deepspeed.ops.sparse_attention.matmul import MatMul
         except:
             raise Exception('Error importing deepspeed. Please install using `DS_BUILD_SPARSE_ATTN=1 pip install deepspeed`')
         if self.shape not in SparseAttention.ops:

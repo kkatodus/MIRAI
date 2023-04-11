@@ -1,7 +1,7 @@
-from matplotlib import pyplot as plt
-from matplotlib import animation
-from IPython.display import HTML
-import torchmetrics
+# from matplotlib import pyplot as plt
+# from matplotlib import animation
+# from IPython.display import HTML
+# import torchmetrics
 
 import os
 import torch
@@ -15,10 +15,10 @@ from videogpt.data import preprocess
 import itertools
 
 
-DATA_DIR = "VideoGPT/data"
+DATA_DIR = "data"
 
 def main():
-
+    print("root dir", os.listdir("."))
     #loading the video GPT model
     device = torch.device('cuda')
     gpt = load_videogpt('bair_gpt', device=device).to(device)
@@ -30,7 +30,8 @@ def main():
     sample_data_np = torch.from_numpy(sample_data_np).float().to(device)
     #first batch, all colors, all frames, cropped to 64x64
     #B x C x T x H x W
-    sample_data_np = sample_data_np[:1, :, :, 64:, 64:]
+    sample_data_np = sample_data_np[:1, :, :16, 64:, 64:]
+
     print("Sample Input Shape is:", sample_data_np.shape)
     sample_input_dict = {'video': sample_data_np}
     gpt.args.n_cond_frames = 10

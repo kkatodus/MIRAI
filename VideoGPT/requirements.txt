@@ -1,20 +1,11 @@
-# tqdm
-# requests
-# h5py
-# torch~=1.7.1
-# torchvision~=0.8.2
-# torchtext~=0.8.1
-# pytorch_lightning
-# scikit-video
-# av
-# gradio
-# moviepy
-# imageio
-# gdown
+#gpu => requires a newer torch version
 
+#fuck below installation works with python 3.9.16
 tqdm
 requests
 h5py
+#this version of torch is too old for the gpu
+# torch~=1.7.1
 torch
 torchvision
 torchtext
@@ -25,3 +16,27 @@ gradio
 moviepy
 imageio
 gdown
+testresources
+deepspeed
+matplotlib
+numpy
+triton==1.1.0
+
+#below installation works with python 3.9.16
+# tqdm
+# requests
+# h5py
+# torch
+# torchvision
+# torchtext
+# pytorch_lightning
+# scikit-video
+# av
+# gradio
+# moviepy
+# imageio
+# gdown
+# testresources
+# deepspeed
+# matplotlib
+
