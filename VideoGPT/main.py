@@ -61,7 +61,6 @@ gpt.args.max_steps = 1000
 training_files_proportion = 0.8
 #getting paths to data    
 files = os.listdir(DATA_DIR)
-files = [os.path.join(DATA_DIR, f) for f in files]
 training_files = random.choices(files, k=int(len(files)*training_files_proportion))
 testing_files = [f for f in files if f not in training_files]
 print("training files", len(training_files))
@@ -71,40 +70,44 @@ print("testing files", len(testing_files))
 #%%
 #training loop
 losses = []
+EPOCHS = 1000
 if len(os.listdir(CHECKPOINT_DIR)) == 0:
     print("No checkpoints found, starting from scratch")
 else:
     print("Found checkpoints, loading them")
     print("Loading checkpoint", os.listdir(CHECKPOINT_DIR)[-1])
     gpt.load_state_dict(torch.load(os.path.join(CHECKPOINT_DIR, os.listdir(CHECKPOINT_DIR)[-1])))
-for file in tqdm(training_files):
-    print("Training file:", file)
-    #getting one sample data
-    file_data_np = np.load(file)
-    file_data_np = torch.from_numpy(file_data_np).float().to(device)
-    #only accepts 16 frames and 64x64 resolution
-    file_data_np = file_data_np[:, :, :16, 64:, 64:]
-    print_data_format(file_data_np)
-    #first batch, all colors, all frames, cropped to 64x64
-    #B x C x T x H x W
-    #creating dataset and dataloader
-    dataset = Dataset(file_data_np)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
-    #getting optimizer for model
-    optimizer, _ = gpt.configure_optimizers()
+for epoch in range(EPOCHS):
+    for file_idx, filename in enumerate(tqdm(training_files)):
+        print("Training filename:", filename)
+        #getting one sample data
+        file_data_np = np.load(os.path.join(DATA_DIR, filename))
+        file_data_np = torch.from_numpy(file_data_np).float().to(device)
+        #only accepts 16 frames and 64x64 resolution
+        file_data_np = file_data_np[:, :, :16, 64:, 64:]
+        print_data_format(file_data_np)
+        #first batch, all colors, all frames, cropped to 64x64
+        #B x C x T x H x W
+        #creating dataset and dataloader
+        dataset = Dataset(file_data_np)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
+        #getting optimizer for model
+        optimizer, _ = gpt.configure_optimizers()
+        
 
-    for i, batch in enumerate(dataloader):
-        # print("batch", i)
-        input_dict = {'video': batch}
+        for i, batch in enumerate(dataloader):
+            # print("batch", i)
+            input_dict = {'video': batch}
 
-        loss, logits =gpt.training_step(input_dict, 0)
-        optimizer.zero_grad()
-        loss.backward()
-        losses.append(loss.item())
-        optimizer.step()
-    print("Done with file", file)
-    print("Saving checkpoint....")
-    saving_path = os.path.join(CHECKPOINT_DIR, f"filenum_{file}_model.pt")
+            loss, logits =gpt.training_step(input_dict, 0)
+            optimizer.zero_grad()
+            loss.backward()
+            losses.append(loss.item())
+            optimizer.step()
+        print("Done with file", filename)
+        print("Saving checkpoint....")
+        saving_path = os.path.join(CHECKPOINT_DIR, f"epochnum_{epoch}_filenum_{file_idx}_model.pt")
+        torch.save(gpt.state_dict(), saving_path)
 #%%
 #visualizing the output of the gpt model
 import itertools
@@ -150,4 +153,8 @@ visualize_np_sequence_opencv(samples, "model_output.mp4", fps=15)
 torch.save(gpt.state_dict(), os.path.join(CHECKPOINT_DIR, "gpt.pt"))
 # %%
 gpt.load_state_dict(torch.load(os.path.join(CHECKPOINT_DIR, "gpt.pt")))
+# %%
+file=1
+saving_path = os.path.join(CHECKPOINT_DIR, f"filename_{file}_model.pt")
+torch.save(gpt.state_dict(), saving_path)
 # %%
