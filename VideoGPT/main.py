@@ -68,6 +68,7 @@ print("testing files", len(testing_files))
 
 
 #%%
+from utils.file_proc import get_newest_file_in_dir
 #training loop
 losses = []
 EPOCHS = 1000
@@ -75,8 +76,8 @@ if len(os.listdir(CHECKPOINT_DIR)) == 0:
     print("No checkpoints found, starting from scratch")
 else:
     print("Found checkpoints, loading them")
-    print("Loading checkpoint", os.listdir(CHECKPOINT_DIR)[-1])
-    gpt.load_state_dict(torch.load(os.path.join(CHECKPOINT_DIR, os.listdir(CHECKPOINT_DIR)[-1])))
+    print("Loading checkpoint", get_newest_file_in_dir(CHECKPOINT_DIR))
+    gpt.load_state_dict(torch.load(get_newest_file_in_dir(CHECKPOINT_DIR)))
 for epoch in range(EPOCHS):
     for file_idx, filename in enumerate(tqdm(training_files)):
         print("Training filename:", filename)
@@ -113,8 +114,9 @@ for epoch in range(EPOCHS):
 import itertools
 from utils.visualizer import visualize_np_sequence_opencv
 
+TEST_FILE_IDX = 10 
 #getting one sample data
-file_data_np = np.load(testing_files[0])
+file_data_np = np.load(os.path.join(DATA_DIR, testing_files[TEST_FILE_IDX]))
 file_data_np = torch.from_numpy(file_data_np).float().to(device)
 #only accepts 16 frames and 64x64 resolution
 file_data_np = file_data_np[:, :, :16, 64:, 64:]
@@ -124,8 +126,9 @@ print_data_format(file_data_np)
 #creating dataset and dataloader
 dataset = Dataset(file_data_np)
 
-#visualize sample data and original data
-sample_data = dataset[:1]
+#visualize sample data
+CLIP_IDX = 300
+sample_data = dataset[CLIP_IDX:CLIP_IDX+1]
 #the input data needs to be in B x T x H x W x C format
 sample_data = sample_data[0].permute(1, 2, 3, 0)
 sample_data = sample_data.cpu().numpy()
@@ -137,8 +140,9 @@ visualize_np_sequence_opencv(sample_data, "sample_data.mp4", fps=15)
 
 #getting output from the gpt model
 gpt.eval()
-cond = {'video': sample_data}
-samples = gpt.sample(1, {"video":dataset[:1]})
+# gpt.load_state_dict(torch.load(get_newest_file_in_dir(CHECKPOINT_DIR)))
+cond = {'video': dataset[CLIP_IDX:CLIP_IDX+1]}
+samples = gpt.sample(1, cond)
 print("sample shape", samples.shape)
 samples = samples[0].permute(1, 2, 3, 0)
 samples = samples.cpu().numpy()
@@ -148,13 +152,30 @@ samples = np.rint(samples)
 samples = samples.astype(np.uint8)
 visualize_np_sequence_opencv(samples, "model_output.mp4", fps=15)
 
+# %%
 
-# %%
-torch.save(gpt.state_dict(), os.path.join(CHECKPOINT_DIR, "gpt.pt"))
-# %%
-gpt.load_state_dict(torch.load(os.path.join(CHECKPOINT_DIR, "gpt.pt")))
-# %%
-file=1
-saving_path = os.path.join(CHECKPOINT_DIR, f"filename_{file}_model.pt")
-torch.save(gpt.state_dict(), saving_path)
+TEST_FILE_IDX = 10 
+#getting one sample data
+file_data_np = np.load(os.path.join(DATA_DIR, testing_files[TEST_FILE_IDX]))
+file_data_np = torch.from_numpy(file_data_np).float().to(device)
+#only accepts 16 frames and 64x64 resolution
+file_data_np = file_data_np[:, :, :16,]
+print_data_format(file_data_np)
+#first batch, all colors, all frames, cropped to 64x64
+#B x C x T x H x W
+#creating dataset and dataloader
+dataset = Dataset(file_data_np)
+
+#visualize sample data
+CLIP_IDX = 300
+sample_data = dataset[CLIP_IDX:CLIP_IDX+1]
+#the input data needs to be in B x T x H x W x C format
+sample_data = sample_data[0].permute(1, 2, 3, 0)
+sample_data = sample_data.cpu().numpy()
+#values need to be between 0 and 255
+sample_data = (sample_data - np.min(sample_data))*255/(np.max(sample_data) - np.min(sample_data))
+sample_data = np.rint(sample_data)
+sample_data = sample_data.astype(np.uint8)
+visualize_np_sequence_opencv(sample_data, "sample_data.mp4", fps=15)
+                    
 # %%
