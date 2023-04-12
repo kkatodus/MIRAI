@@ -151,8 +151,8 @@ class VideoGPT(pl.LightningModule):
             targets, x = self.vqvae.encode(x, include_embeddings=True)
             x = shift_dim(x, 1, -1)
 
-        loss, _ = self(x, targets, cond)
-        return loss
+        loss, logits = self(x, targets, cond)
+        return loss, logits
 
     def validation_step(self, batch, batch_idx):
         loss = self.training_step(batch, batch_idx)
@@ -162,7 +162,7 @@ class VideoGPT(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=3e-4, betas=(0.9, 0.999))
         assert hasattr(self.args, 'max_steps') and self.args.max_steps is not None, f"Must set max_steps argument"
         scheduler = lr_scheduler.CosineAnnealingLR(optimizer, self.args.max_steps)
-        return [optimizer], [dict(scheduler=scheduler, interval='step', frequency=1)]
+        return optimizer, [dict(scheduler=scheduler, interval='step', frequency=1)]
 
 
     @staticmethod

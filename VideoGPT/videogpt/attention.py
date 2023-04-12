@@ -492,8 +492,6 @@ class AddBroadcastPosEmbed(nn.Module):
         if decode_step is not None:
             embs = tensor_slice(embs, [0, *decode_idx, 0],
                                 [x.shape[0], *(1,) * self.n_dim, x.shape[-1]])
-        print("x shape", x.shape)
-        print("embs shape", embs.shape)
         return x + embs
 
 ################# Helper Functions ###################################
