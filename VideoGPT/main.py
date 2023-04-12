@@ -71,6 +71,12 @@ print("testing files", len(testing_files))
 #%%
 #training loop
 losses = []
+if len(os.listdir(CHECKPOINT_DIR)) == 0:
+    print("No checkpoints found, starting from scratch")
+else:
+    print("Found checkpoints, loading them")
+    print("Loading checkpoint", os.listdir(CHECKPOINT_DIR)[-1])
+    gpt.load_state_dict(torch.load(os.path.join(CHECKPOINT_DIR, os.listdir(CHECKPOINT_DIR)[-1])))
 for file in tqdm(training_files):
     print("Training file:", file)
     #getting one sample data
@@ -88,7 +94,7 @@ for file in tqdm(training_files):
     optimizer, _ = gpt.configure_optimizers()
 
     for i, batch in enumerate(dataloader):
-        print("batch", i)
+        # print("batch", i)
         input_dict = {'video': batch}
 
         loss, logits =gpt.training_step(input_dict, 0)
@@ -96,6 +102,9 @@ for file in tqdm(training_files):
         loss.backward()
         losses.append(loss.item())
         optimizer.step()
+    print("Done with file", file)
+    print("Saving checkpoint....")
+    saving_path = os.path.join(CHECKPOINT_DIR, f"filenum_{file}_model.pt")
 #%%
 #visualizing the output of the gpt model
 import itertools
@@ -138,5 +147,7 @@ visualize_np_sequence_opencv(samples, "model_output.mp4", fps=15)
 
 
 # %%
-
+torch.save(gpt.state_dict(), os.path.join(CHECKPOINT_DIR, "gpt.pt"))
+# %%
+gpt.load_state_dict(torch.load(os.path.join(CHECKPOINT_DIR, "gpt.pt")))
 # %%
