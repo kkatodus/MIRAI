@@ -8,6 +8,7 @@ This project involves using a machine learning model to predict the next anime f
 ## Architecture
 ![Architecture](https://cdn.discordapp.com/attachments/1036873248647942185/1096503000622698657/videoGPT.png)
 This project used the same architecture as mentioned in the VideoGPT Paper as showned in the figure above. 
+VideoGPT is a combination of two different models, Vector Quantized Variational Autoencoder (VQVAE) and Transformer model (GPT/Image-GPT). The VQ-VAE is used to compress video frames into discrete latent codes, which are then used as input to the Transformer model. The Transformer is then used to generate future video frames based on the compressed latent codes.
 
 ## Data Collection
 The functions for converting data is under the folder `data`
