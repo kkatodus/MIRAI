@@ -2,7 +2,7 @@ import cv2
 import os 
 from PIL import Image
 
-def visualize_np_sequence_opencv(np_sequence, video_name="video.mp4", fps=30, dir="output"):
+def visualize_np_sequence_opencv(np_sequence, video_name="video.mp4", fps=30, dir="/output"):
     """
     A function to visualize a numpy sequence of images by outputting a video corresponding to the sequence
 

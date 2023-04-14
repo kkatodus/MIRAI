@@ -13,22 +13,24 @@ VideoGPT is a combination of two different models, Vector Quantized Variational 
 ## Data Collection
 The functions for converting data is under the folder `data`
 The main work for data collection is done inside this folder.
-We have created the three scripts for the data collection pipeline:
+We have created these scripts for the data collection pipeline:
 * `generate_timestamps.py` generates the timestamps of the beginning of a cut that lasts longer than 20 frames (we discard any cut that is smaller than 20 frames so that the cuts are meaningful)
 * `split_video.py` split the video into cuts with 20 frames images and save them
 * `generate_npy_from_jpeg.py` converts the jpeg files into a single npy file and also resize the image to the desired size. For the project we convert the image into 64x64 pixels.
+*  `visualize.py` converts the numpy array back into image and videos for visualizing the results
 
 General Data Collection Pipeline:
-![Data Collection Pipeline](https://cdn.discordapp.com/attachments/1068310042908041297/1096505044553183263/data_processing.png)
+![Data Collection Pipeline](https://cdn.discordapp.com/attachments/1068310042908041297/1096509083785383946/data_processing.png)
 
-## Data Visualization
-Data visualization involves two functions that convert the numpy arrays back into video cuts. The functions are inside the file `/data_proc/data_proc.py`
+From this data collection pipeline, we are able to generate approximately 20,000 batches of 20 frames 64x64 images for traning and testing.
 
 
-## VATT
-The code for running VATT encoder is under the folder `VATT`
-VATT model is configured to the configuration that runs with out input. The configuration is set in `main.py` inside the root folder. The dataloader that VATT required does not work with our dataset, hence needs to overwrite through the configurations.
+## Results
 
-## LSTM Decoder
-A 2D convLSTM is defined in `main.py`
-The output from the VATT encoder is passed into the first hidden state of the decoder. Without training, the output was shown in the presentation and the report. The sample video is : [need a link]
+The sample input sequence is PUT SAMPLE GIF
+
+The sample output sequence is PUT OUTPUT GIF
+
+These two sequences have the MSE of ....
+
+Before fine-tuning the model, the output is PUT OUTPUT GIF Before Fine tuning
