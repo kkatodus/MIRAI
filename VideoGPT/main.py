@@ -13,13 +13,15 @@ import numpy as np
 from videogpt import load_videogpt
 from videogpt import load_videogpt
 from datetime import datetime
+import time
 
 from utils.visualizer import visualize_np_sequence_opencv, print_data_format
-from utils.configs import DATA_DIR, SERIES_DIR, CHECKPOINT_DIR, RESULTS_DIR, EPOCHS
+from utils.configs import DATA_DIR, CHECKPOINT_DIR, RESULTS_DIR, LOG_DIR, EPOCHS
 from utils.job import Job
 from utils.dataset import Dataset, is_bad_input
-from utils.file_proc import get_newest_file_in_dir, get_oldest_file_in_dir
+from utils.file_proc import get_newest_file_in_dir, get_oldest_file_in_dir, write_log
 from utils.calc import normalize_np, normalize_tensor
+
 
 #%%
 def fix_seeds():
@@ -52,51 +54,52 @@ optimizer, _ = gpt.configure_optimizers()
 
 #         print(data_np.shape)
 #%%
-def train_gpt_on_files(job, device=torch.device('cuda')):
+def train_gpt_on_files(job, device=torch.device('cuda'), epoch = 0):
     job_name = job.job_name
     file_paths = job.file_paths
-    epochs = job.epochs
     print("starting job", job_name)
     losses = []
-    for epoch in range(epochs):
-        for file_idx, file_path in enumerate(tqdm(file_paths)):
+
+    for file_idx, file_path in enumerate(tqdm(file_paths)):
+        write_log(os.path.join(LOG_DIR, "log.txt"), f"Starting file {file_idx} of {len(file_paths)} in job {job_name} at {str(datetime.now())}\n")
+        #getting one sample data
+        file_data_np = np.load(file_path)
+        file_data_np = torch.from_numpy(file_data_np).float().to(device)
+        #only accepts 16 frames and 64x64 resolution
+        file_data_np = file_data_np[:, :, :16]
+        #first batch, all colors, all frames, cropped to 64x64
+        #B x C x T x H x W
+        #creating dataset and dataloader
+        dataset = Dataset(file_data_np)
+        # dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=1)
+
+        for i, batch in enumerate(dataloader):
             
-            #getting one sample data
-            file_data_np = np.load(file_path)
-            file_data_np = torch.from_numpy(file_data_np).float().to(device)
-            #only accepts 16 frames and 64x64 resolution
-            file_data_np = file_data_np[:, :, :16]
-            #first batch, all colors, all frames, cropped to 64x64
-            #B x C x T x H x W
-            #creating dataset and dataloader
-            dataset = Dataset(file_data_np)
-            # dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
-            dataloader = torch.utils.data.DataLoader(dataset, batch_size=1)
+            # print("batch", i)
+            #normalizing the batch
+            batch = normalize_tensor(batch)
+            if is_bad_input(batch):
+                print("bad input found in batch:", i, "of", file_path)
+                continue
+            input_dict = {'video': batch}
 
-            for i, batch in enumerate(dataloader):
-                
-                # print("batch", i)
-                #normalizing the batch
-                batch = normalize_tensor(batch)
-                if is_bad_input(batch):
-                    print("bad input found in batch:", i, "of", file_path)
-                    continue
-                input_dict = {'video': batch}
+            loss, logits =gpt.training_step(input_dict, 0)
+            if torch.isnan(logits).any():
+                raise Exception(f"\nNan found in logits:{i}th batch of {file_path}")
 
-                loss, logits =gpt.training_step(input_dict, 0)
-                if torch.isnan(logits).any():
-                    raise Exception(f"\nNan found in logits:{i}th batch of {file_path}")
-
-                optimizer.zero_grad()
-                loss.backward()
-                losses.append(loss.item())
-                optimizer.step()
-        print("Done training of job:", job_name)
-        print("Saving checkpoint....")
-        now = datetime.now()    
-        current_time = now.strftime("day_%d_%m_%y_time_%H_%M_%S")
-        saving_path = os.path.join(CHECKPOINT_DIR, f"job_{job_name.split('.')[0]}_epoch_{epoch}_time_{current_time}.pt")
-        torch.save(gpt.state_dict(), saving_path)
+            optimizer.zero_grad()
+            loss.backward()
+            losses.append(loss.item())
+            optimizer.step()
+    
+    print("Done training of job:", job_name)
+    print("Saving checkpoint....")
+    now = datetime.now()    
+    current_time = now.strftime("day_%d_%m_%y_time_%H_%M_%S")
+    saving_path = os.path.join(CHECKPOINT_DIR, f"job_{job_name.split('.')[0]}_epoch_{epoch}_time_{current_time}.pt")
+    torch.save(gpt.state_dict(), saving_path)
+    
     return losses
 
 #%%
@@ -120,25 +123,29 @@ for job in jobs:
     print(job)
 print("---------------------------------------")
 print("---------------------------------------")
+
+#log the jobs
+#open log file
 #%%
 #training loop
 losses = []
-EPOCHS = 100
 if len(os.listdir(CHECKPOINT_DIR)) == 0:
     print("No checkpoints found, starting from scratch")
 else:
     print("Found checkpoints, loading them")
     print("Loading checkpoint", get_newest_file_in_dir(CHECKPOINT_DIR))
     gpt.load_state_dict(torch.load(get_newest_file_in_dir(CHECKPOINT_DIR)))
-
-for job in jobs:
-    losses = train_gpt_on_files(job,device)
-    now = datetime.now()    
-    current_time = now.strftime("day_%d_%m_%y_time_%H_%M_%S")
-    plt.plot(losses)
-    plt.savefig(os.path.join(RESULTS_DIR, f"{job.job_name}_losses_{current_time}.png"))   
-    plt.clf()
-    plt.cla() 
+for epoch in range(EPOCHS):
+    for job in jobs:
+        write_log(os.path.join(LOG_DIR, "log.txt"), f"\n\nstarting epoch {epoch} of job {job.job_name} at {str(datetime.now())}\n-------------------------------------------------------------------------\n")
+        losses = train_gpt_on_files(job,device)
+        write_log(os.path.join(LOG_DIR, "log.txt"), f"finished epoch {epoch} of job {job.job_name} at {str(datetime.now())}\n-------------------------------------------------------------------------\n\n")
+        now = datetime.now()    
+        current_time = now.strftime("day_%d_%m_%y_time_%H_%M_%S")
+        plt.plot(losses)
+        plt.savefig(os.path.join(RESULTS_DIR, f"{job.job_name}_losses_{current_time}_epoch_{epoch}.png"))   
+        plt.clf()
+        plt.cla() 
 
 #%%
 #visualizing what we are feeding into the model
