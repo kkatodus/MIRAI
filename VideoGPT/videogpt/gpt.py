@@ -102,7 +102,6 @@ class VideoGPT(pl.LightningModule):
                 else:
                     embeddings_slice = embeddings[prev_idx]
                     samples_slice = samples[prev_idx]
-
                 logits = self(embeddings_slice, samples_slice, cond,
                               decode_step=i, decode_idx=idx)[1]
                 # squeeze all possible dim except batch dimension

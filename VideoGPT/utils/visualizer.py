@@ -28,3 +28,14 @@ def visualize_np_sequence_opencv(np_sequence, video_name="video.mp4", fps=30, di
         video.write(np_sequence[i])
     video.release()
     cv2.destroyAllWindows()
+
+
+def print_data_format(data):
+    if len(list(data.shape)) != 5:
+        print("Data must be in B x C x T x H x W format")
+    else:
+        print("batch size", data.shape[0])
+        print("channels", data.shape[1])
+        print("frames", data.shape[2])
+        print("height", data.shape[3])
+        print("width", data.shape[4])
