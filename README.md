@@ -10,7 +10,7 @@ This project involves using a machine learning model to predict the next anime f
 This project used the same architecture as mentioned in the VideoGPT Paper as showned in the figure above. 
 VideoGPT is a combination of two different models, Vector Quantized Variational Autoencoder (VQVAE) and Transformer model (GPT/Image-GPT). The VQ-VAE is used to compress video frames into discrete latent codes, which are then used as input to the Transformer model. The Transformer is then used to generate future video frames based on the compressed latent codes.
 
-As the pre-trained weights are specific to the model architecture, to be able to use the pre-trained weights, the model architecture needs to be the same. Hence we tried to experiment with the hyperparameters that doesn't change the model architecture including the batch size and the number of conditioned frames. 
+
 
 ## Data Collection
 The functions for converting data is under the folder `data`
@@ -34,5 +34,14 @@ From this data collection pipeline, we are able to generate approximately 20,000
 ![Table](https://cdn.discordapp.com/attachments/1068309893171384330/1097565990767841401/image.png)
 
 ## Hyperparameter Tuning
+As the pre-trained weights are specific to the model architecture, to be able to use the pre-trained weights, the model architecture needs to be the same. Hence we tried to experiment with the hyperparameters that doesn't change the model architecture including the batch size and the number of conditioned frames. 
+### Batch Size
+Due to the memory constraint, increasing the batch size requires us to change the size of the input and output to fewer frames. Our experiment found that having the batch size of 1 and have 16 frames performs the best.
+
+![BatchSizeResults](https://cdn.discordapp.com/attachments/1068309893171384330/1097567920466427965/image.png)
 
 
+### Number of Conditioned Frames
+Increasing the number of conditioned frame increases the model's performance. In practice, we want to minimize the number of frames the model conditions on while performing with an acceptable performance. 
+
+![NumberFrameResults](https://cdn.discordapp.com/attachments/1068309893171384330/1097565316822863943/image.png)
