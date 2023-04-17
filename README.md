@@ -22,15 +22,13 @@ We have created these scripts for the data collection pipeline:
 General Data Collection Pipeline:
 ![Data Collection Pipeline](https://cdn.discordapp.com/attachments/1068310042908041297/1096509083785383946/data_processing.png)
 
-From this data collection pipeline, we are able to generate approximately 20,000 batches of 20 frames 64x64 images for traning and testing.
+From this data collection pipeline, we are able to generate approximately 20,000 batches of 20 frames 64x64 images for traning and testing. Note that the Video-GPT uses 16 frames. 
 
 
 ## Results
 
-The sample input sequence is PUT SAMPLE GIF
+![Results](https://cdn.discordapp.com/attachments/1068309893171384330/1097378418594676756/image.png)
 
-The sample output sequence is PUT OUTPUT GIF
-
-These two sequences have the MSE of ....
+![Table](https://cdn.discordapp.com/attachments/1068309893171384330/1097565990767841401/image.png)
 
 Before fine-tuning the model, the output is PUT OUTPUT GIF Before Fine tuning
