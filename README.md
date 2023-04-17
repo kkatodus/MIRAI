@@ -29,7 +29,7 @@ From this data collection pipeline, we are able to generate approximately 20,000
 
 ## Results
 
-![Results](https://cdn.discordapp.com/attachments/1068309893171384330/1097378418594676756/image.png)
+![Results](https://cdn.discordapp.com/attachments/1068309893171384330/1097574229471412244/image.png)
 
 ![Table](https://cdn.discordapp.com/attachments/1068309893171384330/1097565990767841401/image.png)
 

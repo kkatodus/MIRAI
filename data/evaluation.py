@@ -28,17 +28,3 @@ def sequence_mean_squared_error(seq1, seq2):
     for i in range(len(seq1)):
         mse += mean_squared_error(seq1[i], seq2[i])
     return mse / num_img
-
-
-if __name__ == "__main__":
-    path_to_seq1 = "/Volumes/OneTouch/Doraemon/doraemon64.npy"
-    path_to_seq2 = "/Volumes/OneTouch/YourName/yourname64_scaled.npy"
-
-    seq1 = np.load(path_to_seq1)
-    seq2 = np.load(path_to_seq2)
-
-    frame1 = np.ones((20, 128, 128, 3))
-    frame2 = 10*np.ones((20, 128, 128, 3))
-
-    mse = sequence_mean_squared_error(frame1, frame2)
-    print("MSE: ", mse)
