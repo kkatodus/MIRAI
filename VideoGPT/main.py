@@ -1,13 +1,9 @@
 #%%
 from matplotlib import pyplot as plt
-from matplotlib import animation
-from IPython.display import HTML
-import torchmetrics
 
 from tqdm import tqdm
 import os
 import torch
-import torch.nn.functional as F
 import numpy as np
 
 from videogpt import load_videogpt
@@ -34,8 +30,8 @@ import random
 #loading the video GPT model
 device = torch.device('cuda')
 gpt = load_videogpt('bair_gpt', device=device).to(device)
-gpt.args.n_cond_frames = 10
-gpt.args.max_steps = 1000
+gpt.args.n_cond_frames = 1
+gpt.args.max_steps = 10000
 optimizer, _ = gpt.configure_optimizers()
 
 
@@ -55,6 +51,7 @@ optimizer, _ = gpt.configure_optimizers()
 #         print(data_np.shape)
 #%%
 def train_gpt_on_files(job, device=torch.device('cuda'), epoch = 0):
+    gpt.train()
     job_name = job.job_name
     file_paths = job.file_paths
     print("starting job", job_name)
@@ -78,7 +75,10 @@ def train_gpt_on_files(job, device=torch.device('cuda'), epoch = 0):
             
             # print("batch", i)
             #normalizing the batch
-            batch = normalize_tensor(batch)
+            # batch = normalize_tensor(batch)
+            batch /= 255
+            #making it between -0.5 and 0.5
+            # batch -= 0.5
             if is_bad_input(batch):
                 print("bad input found in batch:", i, "of", file_path)
                 continue
@@ -105,7 +105,9 @@ def train_gpt_on_files(job, device=torch.device('cuda'), epoch = 0):
 #%%
 #prepare jobs for the training
 jobs = []
-for entry in os.listdir(DATA_DIR):
+directory = os.listdir(DATA_DIR)
+directory = ["train_yourname64_scaled.npy"]
+for entry in directory:
     path_to_entry = os.path.join(DATA_DIR, entry)
     if not entry.startswith("train_"):
         continue
@@ -133,12 +135,13 @@ if len(os.listdir(CHECKPOINT_DIR)) == 0:
     print("No checkpoints found, starting from scratch")
 else:
     print("Found checkpoints, loading them")
-    print("Loading checkpoint", get_newest_file_in_dir(CHECKPOINT_DIR))
-    gpt.load_state_dict(torch.load(get_newest_file_in_dir(CHECKPOINT_DIR)))
+    checkpoint_path = os.path.join("checkpoints", "job_train_yourname64_scaled_epoch_1_time_day_15_04_23_time_20_59_16.pt")
+    print("Loading checkpoint", checkpoint_path)
+    gpt.load_state_dict(torch.load(checkpoint_path))
 for epoch in range(EPOCHS):
     for job in jobs:
         write_log(os.path.join(LOG_DIR, "log.txt"), f"\n\nstarting epoch {epoch} of job {job.job_name} at {str(datetime.now())}\n-------------------------------------------------------------------------\n")
-        losses = train_gpt_on_files(job,device)
+        losses = train_gpt_on_files(job,device, epoch)
         write_log(os.path.join(LOG_DIR, "log.txt"), f"finished epoch {epoch} of job {job.job_name} at {str(datetime.now())}\n-------------------------------------------------------------------------\n\n")
         now = datetime.now()    
         current_time = now.strftime("day_%d_%m_%y_time_%H_%M_%S")
@@ -150,12 +153,15 @@ for epoch in range(EPOCHS):
 #%%
 #visualizing what we are feeding into the model
 #get all the testing files
+device = torch.device('cuda')
 testing_files = [file for file in os.listdir(DATA_DIR) if file.startswith("test_") and not os.path.isdir(os.path.join(DATA_DIR, file))]
 
-TEST_FILE_IDX = 0
-print("testing file:", testing_files[TEST_FILE_IDX])
+TEST_FILE_IDX = 1
+test_file = testing_files[TEST_FILE_IDX]
+test_file = "test_yourname64_scaled.npy"
+print("testing file:", test_file)
 #getting one sample data
-file_data_np = np.load(os.path.join(DATA_DIR, testing_files[TEST_FILE_IDX]))
+file_data_np = np.load(os.path.join(DATA_DIR, test_file))
 # file_data_np = np.load(os.path.join(DATA_DIR, "test_Avatar","2_16.npy"))
 file_data_np = torch.from_numpy(file_data_np).float().to(device)
 file_data_np = file_data_np[:, :, :16,]
@@ -165,7 +171,13 @@ print_data_format(file_data_np)
 #creating dataset
 dataset = Dataset(file_data_np)
 #visualize sample data
-CLIP_IDX = 0
+#good looking outputs
+#your name and clip 5
+#your name and clip 20
+#your name and clip 199
+
+
+CLIP_IDX = 5
 sample_data = dataset[CLIP_IDX]
 sample_data = sample_data.permute(1, 2, 3, 0)
 sample_data = sample_data.cpu().numpy()
@@ -173,24 +185,42 @@ sample_data = sample_data.cpu().numpy()
 sample_data = (sample_data - np.min(sample_data))*255/(np.max(sample_data) - np.min(sample_data))
 sample_data = np.rint(sample_data)
 sample_data = sample_data.astype(np.uint8)
+np.save("sample_data.npy", sample_data)
 visualize_np_sequence_opencv(sample_data, "sample_data.mp4", fps=15)
 
 
 #%%
 #getting output from the gpt model
-device = torch.device('cuda')
-print("Loading checkpoint", get_newest_file_in_dir(CHECKPOINT_DIR))
-gpt.load_state_dict(torch.load(get_newest_file_in_dir(CHECKPOINT_DIR)))
-
+gpt = load_videogpt('bair_gpt', device=device).to(device)
 cond = {'video': normalize_tensor(dataset[CLIP_IDX:CLIP_IDX+1])}
+#output without training
 samples = gpt.sample(1, cond)
 samples = samples[0].permute(1, 2, 3, 0)
 samples = samples.cpu().numpy()
+samples = (samples - np.min(samples))*255/(np.max(samples) - np.min(samples))
+samples = np.rint(samples)
+samples = samples.astype(np.uint8)
+np.save("sample_out_wo_training.npy", samples)
+visualize_np_sequence_opencv(samples, "model_output_wo_training.mp4", fps=15)
+#output with training
+#%%
+checkpoint_path = os.path.join("checkpoints", "job_train_yourname64_scaled_epoch_1_time_day_15_04_23_time_20_59_16.pt")
+checkpoint_path = os.path.join("checkpoints", "job_train_yourname64_scaled_epoch_137_time_day_16_04_23_time_15_23_31.pt")
+print("Loading checkpoint", checkpoint_path)
+checkpoint_path = get_newest_file_in_dir(CHECKPOINT_DIR)
+
+gpt.load_state_dict(torch.load(checkpoint_path))
+samples = gpt.sample(1, cond)
+samples = samples[0].permute(1, 2, 3, 0)
+samples = samples.cpu().numpy()
+
+samples*=10000
 #values need to be between 0 and 255
 samples = (samples - np.min(samples))*255/(np.max(samples) - np.min(samples))
 samples = np.rint(samples)
 samples = samples.astype(np.uint8)
-visualize_np_sequence_opencv(samples, "model_output.mp4", fps=15)
+np.save("sample_out_w_training.npy", samples)
+visualize_np_sequence_opencv(samples, "model_output_w_training.mp4", fps=15)
 
 
 # %%

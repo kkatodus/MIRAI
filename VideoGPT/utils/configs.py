@@ -7,7 +7,7 @@ RESULTS_DIR = "results"
 LOG_DIR = "logs"
 
 #Training parameters
-EPOCHS = 20
+EPOCHS = 1000
 
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
