@@ -72,7 +72,12 @@ def train_gpt_on_files(job, device=torch.device('cuda'), epoch = 0):
         #creating dataset and dataloader
         dataset = Dataset(file_data_np)
         # dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
+        
+        #testing different batch size
+        #dataloader = torch.utils.data.DataLoader(dataset, batch_size=10)
+        #dataloader = torch.utils.data.DataLoader(dataset, batch_size=5)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=1)
+        
 
         for i, batch in enumerate(dataloader):
             
