@@ -71,6 +71,9 @@ class VQVAE(pl.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=3e-4, betas=(0.9, 0.999))
+        #test out different learning rate
+        #return torch.optim.Adam(self.parameters(), lr=3e-8, betas=(0.9, 0.999))
+        #return torch.optim.Adam(self.parameters(), lr=3e-2, betas=(0.9, 0.999))
 
     @staticmethod
     def add_model_specific_args(parent_parser):
