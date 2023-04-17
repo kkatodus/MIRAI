@@ -13,6 +13,15 @@ def mean_squared_error(img1, img2):
     return np.mean((img1.astype(np.float32) - img2.astype(np.float32)) ** 2)
 
 
+def abs_error(img1, img2):
+    """ This function calculates the mean squared error between two images
+    :param img1: the first image
+    :param img2: the second image
+    :return: the mean squared error
+    """
+    return np.mean(np.abs((img1.astype(np.float32) - img2.astype(np.float32))))
+
+
 def sequence_mean_squared_error(seq1, seq2):
     """This function calculates the mean squared error between two sequences
     :param seq1: the first sequence
