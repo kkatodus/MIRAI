@@ -38,7 +38,7 @@ As the pre-trained weights are specific to the model architecture, to be able to
 ### Batch Size
 Due to the memory constraint, increasing the batch size requires us to change the size of the input and output to fewer frames. Our experiment found that having the batch size of 1 and have 16 frames performs the best.
 
-![BatchSizeResults](https://cdn.discordapp.com/attachments/1068309893171384330/1097567920466427965/image.png)
+![BatchSizeResults](https://cdn.discordapp.com/attachments/1068309893171384330/1097895541561634826/image.png)
 
 
 ### Number of Conditioned Frames
